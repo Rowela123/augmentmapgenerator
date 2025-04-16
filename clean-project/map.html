@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple US Map</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .map-container {
+            width: 100%;
+            height: 500px;
+            border: 1px solid #ccc;
+            margin: 20px 0;
+            position: relative;
+        }
+        .state {
+            fill: #ddd;
+            stroke: #fff;
+            stroke-width: 1px;
+            transition: fill 0.3s;
+        }
+        .state:hover {
+            fill: #4CAF50;
+            cursor: pointer;
+        }
+        .tooltip {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .back-button {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple US Map</h1>
+    
+    <div class="map-container" id="map"></div>
+    <div class="tooltip" id="tooltip"></div>
+    
+    <a href="index.html" class="back-button">Back to Home</a>
+    
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+    <script>
+        // Simple map rendering script
+        async function renderMap() {
+            const mapContainer = document.getElementById('map');
+            const tooltip = document.getElementById('tooltip');
+            
+            // Set dimensions
+            const width = mapContainer.clientWidth;
+            const height = mapContainer.clientHeight;
+            
+            // Create SVG
+            const svg = d3.select(mapContainer)
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height);
+            
+            try {
+                // Load US map data from CDN
+                const us = await d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json');
+                
+                // Create projection
+                const projection = d3.geoAlbersUsa()
+                    .fitSize([width, height], topojson.feature(us, us.objects.states));
+                
+                // Create path generator
+                const path = d3.geoPath().projection(projection);
+                
+                // Draw states
+                svg.selectAll('path')
+                    .data(topojson.feature(us, us.objects.states).features)
+                    .enter()
+                    .append('path')
+                    .attr('class', 'state')
+                    .attr('d', path)
+                    .on('mouseover', function(event, d) {
+                        // Show tooltip
+                        d3.select(this).attr('fill', '#4CAF50');
+                        
+                        // Get state name
+                        const stateName = d.properties.name || 'Unknown State';
+                        
+                        // Position tooltip
+                        tooltip.style.left = (event.pageX + 10) + 'px';
+                        tooltip.style.top = (event.pageY + 10) + 'px';
+                        tooltip.innerHTML = stateName;
+                        tooltip.style.opacity = 1;
+                    })
+                    .on('mouseout', function() {
+                        // Hide tooltip
+                        d3.select(this).attr('fill', '#ddd');
+                        tooltip.style.opacity = 0;
+                    });
+                
+            } catch (error) {
+                console.error('Error loading map data:', error);
+                mapContainer.innerHTML = '<p>Error loading map data. Please try again later.</p>';
+            }
+        }
+        
+        // Render map when page loads
+        window.addEventListener('load', renderMap);
+    </script>
+</body>
+</html>
