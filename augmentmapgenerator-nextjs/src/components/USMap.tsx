@@ -29,7 +29,7 @@ export function USMap({
 }: USMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
-  
+
   // Create a map of state data for quick lookup
   const stateDataMap = stateData.reduce((acc, state) => {
     acc[state.stateCode] = state;
@@ -38,19 +38,24 @@ export function USMap({
 
   useEffect(() => {
     if (!mapRef.current) return;
-    
+
     const drawMap = async () => {
       // Clear previous content
       d3.select(mapRef.current).selectAll('*').remove();
-      
+
       try {
         // Load US TopoJSON data
-        const us = await d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json');
+        const us = await d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json')
+          .catch(error => {
+            console.error('Error loading US map data:', error);
+            throw new Error('Failed to load US map data');
+          });
+
         if (!us) throw new Error('Failed to load US map data');
-        
+
         // Convert TopoJSON to GeoJSON
         const statesFeatures = topojson.feature(us, us.objects.states).features;
-        
+
         // Add state names
         statesFeatures.forEach((state: any) => {
           const stateId = state.id;
@@ -61,28 +66,28 @@ export function USMap({
             state.properties.name = stateInfo.name;
           }
         });
-        
+
         // Create SVG
         const width = mapRef.current.clientWidth;
         const height = mapRef.current.clientHeight;
-        
+
         const svg = d3.select(mapRef.current)
           .append('svg')
           .attr('width', '100%')
           .attr('height', '100%')
           .attr('viewBox', `0 0 ${width} ${height}`)
           .attr('preserveAspectRatio', 'xMidYMid meet');
-        
+
         // Create projection
         const projection = d3.geoAlbersUsa()
           .fitSize([width, height], { type: 'FeatureCollection', features: statesFeatures });
-        
+
         // Create path generator
         const pathGenerator = d3.geoPath().projection(projection);
-        
+
         // Create color scale
         let colorScale: any;
-        
+
         // Set color scheme
         if (colorScheme === 'multi') {
           // For multi-color scheme, use a standard threshold scale
@@ -96,7 +101,7 @@ export function USMap({
         } else {
           // Sequential color schemes
           colorScale = d3.scaleSequential();
-          
+
           switch (colorScheme) {
             case 'blues':
               colorScale.interpolator(d3.interpolateBlues);
@@ -120,31 +125,31 @@ export function USMap({
               colorScale.interpolator(d3.interpolateBlues);
           }
         }
-        
+
         // Find min and max values
         let minValue = 0;
         let maxValue = 100;
-        
+
         if (stateData.length > 0) {
           const values = stateData
             .filter(d => d.value !== null)
             .map(d => d.value as number);
-          
+
           if (values.length > 0) {
             minValue = Math.min(...values);
             maxValue = Math.max(...values);
           }
         }
-        
+
         // Set domain for color scale
         colorScale.domain([minValue, maxValue]);
-        
+
         // Create tooltip
         const tooltip = d3.select(tooltipRef.current);
-        
+
         // Define small states that need special handling
         const smallStates = ['RI', 'DE', 'DC', 'CT', 'NJ', 'MD', 'MA', 'NH', 'VT'];
-        
+
         // Draw states
         svg.selectAll('path')
           .data(statesFeatures)
@@ -153,25 +158,25 @@ export function USMap({
           .attr('d', (d: any) => pathGenerator(d) || '')
           .attr('fill', (d: any) => {
             const stateCode = d.properties.code;
-            
+
             // If we're using multi-color scheme and have a custom color for this state, use it
             if (colorScheme === 'multi' && customColors[stateCode]) {
               return customColors[stateCode];
             }
-            
+
             // Special case for Hawaii to ensure it's colored
             if (stateCode === 'HI') {
               return colorScale(minValue);
             }
-            
+
             const stateDataItem = stateData.find(item => item.stateCode === stateCode);
-            
+
             // If we have data for this state
             if (stateDataItem) {
               // If the state has a value (including zero), use the color scale; otherwise use a light gray
               return stateDataItem.value !== null ? colorScale(stateDataItem.value) : '#ccc';
             }
-            
+
             // No data for this state
             return '#eee';
           })
@@ -185,22 +190,22 @@ export function USMap({
             const stateCode = d.properties.code;
             const stateName = d.properties.name;
             const stateDataItem = stateData.find(item => item.stateCode === stateCode);
-            
+
             d3.select(event.currentTarget)
               .attr('stroke', '#333')
               .attr('stroke-width', 1.5);
-            
+
             tooltip
               .style('opacity', 1)
               .style('left', `${event.pageX + 10}px`)
               .style('top', `${event.pageY + 10}px`);
-            
+
             // Determine color for tooltip header based on value
             let headerColor = '#999';
             if (stateDataItem && stateDataItem.value !== null) {
               const value = stateDataItem.value;
               const normalizedValue = (value - minValue) / (maxValue - minValue);
-              
+
               if (normalizedValue >= 0.75) {
                 headerColor = '#d32f2f'; // Red for highest values
               } else if (normalizedValue >= 0.5) {
@@ -211,26 +216,26 @@ export function USMap({
                 headerColor = '#388e3c'; // Green for low values
               }
             }
-            
+
             // Use the label as the header if available, otherwise use the state name
             const headerText = stateDataItem && stateDataItem.label ? stateDataItem.label : stateName;
-            
+
             let tooltipContent = `
               <div class="tooltip-header" style="background-color: ${headerColor}">
                 <div class="state-icon">${stateDataItem ? stateDataItem.stateCode : ''}</div>
                 ${headerText}
               </div>
               <div class="tooltip-body">`;
-            
+
             if (stateDataItem) {
               // If we're using a label as the header, show the state name in the body
               if (stateDataItem.label) {
                 tooltipContent += `<p><strong>State:</strong> ${stateName}</p>`;
               }
-              
+
               // We're not showing the value in this map as per user request
               // Value is still used for coloring the map, but not displayed in tooltip
-              
+
               // Add info if available, preserving HTML formatting
               if (stateDataItem.info) {
                 tooltipContent += `<p>${stateDataItem.info}</p>`;
@@ -238,9 +243,9 @@ export function USMap({
             } else {
               tooltipContent += '<p>No data available</p>';
             }
-            
+
             tooltipContent += '</div>';
-            
+
             tooltip.html(tooltipContent);
           })
           .on('mousemove', (event: any) => {
@@ -252,10 +257,10 @@ export function USMap({
             d3.select(event.currentTarget)
               .attr('stroke', '#fff')
               .attr('stroke-width', 0.5);
-            
+
             tooltip.style('opacity', 0);
           });
-        
+
         // Add small states list to the side
         if (smallStates.length > 0) {
           // Create a group for the small states list
@@ -263,21 +268,21 @@ export function USMap({
           const smallStatesGroup = svg.append('g')
             .attr('class', 'small-states-list')
             .attr('transform', `translate(${width - 30}, ${height/2 - smallStates.length * 10})`);
-          
+
           // Add each small state to the list
           smallStates.forEach((stateCode, index) => {
             const state = statesFeatures.find((d: any) => d.properties.code === stateCode);
             if (!state) return;
-            
+
             const stateCentroid = pathGenerator.centroid(state as any);
-            
+
             // Add small dot for the state
             smallStatesGroup.append('circle')
               .attr('cx', 0)
               .attr('cy', index * 20)
               .attr('r', 3)
               .attr('fill', '#666');
-            
+
             // Add state code text
             smallStatesGroup.append('text')
               .attr('x', 10)
@@ -287,16 +292,16 @@ export function USMap({
               .attr('text-anchor', 'start')
               .attr('alignment-baseline', 'middle')
               .text(stateCode);
-            
+
             // Draw connecting line from list to state - curved line
             if (stateCentroid && stateCentroid.length === 2) {
               // Calculate the position relative to the smallStatesGroup
               const targetX = stateCentroid[0] - (width - 30);
               const targetY = stateCentroid[1] - (height/2 - smallStates.length * 10);
-              
+
               // Create a curved path using SVG path commands
               const path = `M 0 ${index * 20} L -10 ${index * 20} Q -30 ${index * 20} ${targetX} ${targetY}`;
-              
+
               smallStatesGroup.append('path')
                 .attr('d', path)
                 .attr('fill', 'none')
@@ -305,7 +310,7 @@ export function USMap({
             }
           });
         }
-        
+
         // Add state labels if enabled
         if (showLabels) {
           svg.selectAll('text.state-label')
@@ -327,7 +332,7 @@ export function USMap({
             .attr('fill', '#333')
             .text((d: any) => d.properties.code);
         }
-        
+
         // Add legend if we have data
         if (stateData.length > 0) {
           const legendWidth = 200;
@@ -335,7 +340,7 @@ export function USMap({
           // Position the legend to the right side of the map, between Texas and Florida
           const legendX = width * 0.58; // Moved a tiny bit more to the left
           const legendY = height - 40; // Very close to the bottom
-          
+
           // Create gradient for legend
           const defs = svg.append('defs');
           const gradient = defs.append('linearGradient')
@@ -344,7 +349,7 @@ export function USMap({
             .attr('x2', '100%')
             .attr('y1', '0%')
             .attr('y2', '0%');
-          
+
           // Add color stops
           const numStops = 10;
           for (let i = 0; i <= numStops; i++) {
@@ -354,7 +359,7 @@ export function USMap({
               .attr('offset', offset)
               .attr('stop-color', colorScale(value));
           }
-          
+
           // Draw legend rectangle
           svg.append('rect')
             .attr('x', legendX)
@@ -364,7 +369,7 @@ export function USMap({
             .style('fill', 'url(#legend-gradient)')
             .attr('stroke', '#ccc')
             .attr('stroke-width', 1);
-          
+
           // Add legend title
           svg.append('text')
             .attr('x', legendX)
@@ -372,7 +377,7 @@ export function USMap({
             .attr('font-size', '12px')
             .attr('fill', '#333')
             .text(legendTitle);
-          
+
           // Add min label directly below the scale
           svg.append('text')
             .attr('x', legendX)
@@ -381,7 +386,7 @@ export function USMap({
             .attr('fill', '#000')
             .attr('font-weight', 'bold')
             .text(legendMinLabel);
-          
+
           // Add max label directly below the scale
           svg.append('text')
             .attr('x', legendX + legendWidth)
@@ -392,7 +397,7 @@ export function USMap({
             .attr('font-weight', 'bold')
             .text(legendMaxLabel);
         }
-        
+
         // Add title if provided
         if (title) {
           svg.append('text')
@@ -413,21 +418,21 @@ export function USMap({
           .text('Error loading map data');
       }
     };
-    
+
     drawMap();
-    
+
     // Redraw on window resize
     const handleResize = () => {
       drawMap();
     };
-    
+
     window.addEventListener('resize', handleResize);
-    
+
     return () => {
       window.removeEventListener('resize', handleResize);
     };
   }, [stateData, colorScheme, title, legendTitle, legendMinLabel, legendMaxLabel, showLabels, customColors]);
-  
+
   return (
     <>
       <div ref={mapRef} style={{ width: '100%', height: '100%' }}></div>
