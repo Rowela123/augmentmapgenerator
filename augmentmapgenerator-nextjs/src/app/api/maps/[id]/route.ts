@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-// Directory to store map data
-const DATA_DIR = path.join(process.cwd(), 'data');
+import { mapStorage } from '@/lib/storage';
 
 export async function GET(
   request: NextRequest,
@@ -11,7 +7,7 @@ export async function GET(
 ) {
   try {
     const mapId = params.id;
-    
+
     // Validate map ID format
     if (!mapId || !mapId.match(/^[a-zA-Z0-9-]+$/)) {
       return NextResponse.json(
@@ -19,20 +15,19 @@ export async function GET(
         { status: 400 }
       );
     }
-    
-    // Check if map exists
-    const filePath = path.join(DATA_DIR, `${mapId}.json`);
-    if (!fs.existsSync(filePath)) {
+
+    // The demo map is now stored in the mapStorage
+
+    // Check if map exists in storage
+    // In a real app, you would fetch this from a database
+    const mapData = mapStorage?.[mapId];
+    if (!mapData) {
       return NextResponse.json(
         { error: 'Map not found' },
         { status: 404 }
       );
     }
-    
-    // Read map data
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
-    const mapData = JSON.parse(fileContent);
-    
+
     return NextResponse.json(mapData);
   } catch (error) {
     console.error('Error retrieving map:', error);
@@ -49,7 +44,7 @@ export async function DELETE(
 ) {
   try {
     const mapId = params.id;
-    
+
     // Validate map ID format
     if (!mapId || !mapId.match(/^[a-zA-Z0-9-]+$/)) {
       return NextResponse.json(
@@ -57,19 +52,18 @@ export async function DELETE(
         { status: 400 }
       );
     }
-    
+
     // Check if map exists
-    const filePath = path.join(DATA_DIR, `${mapId}.json`);
-    if (!fs.existsSync(filePath)) {
+    if (!mapStorage?.[mapId]) {
       return NextResponse.json(
         { error: 'Map not found' },
         { status: 404 }
       );
     }
-    
-    // Delete map file
-    fs.unlinkSync(filePath);
-    
+
+    // Delete map from storage
+    delete mapStorage[mapId];
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting map:', error);
