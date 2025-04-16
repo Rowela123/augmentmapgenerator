@@ -1,0 +1,12 @@
+{
+  "name": "us-map-generator-static",
+  "version": "1.0.0",
+  "description": "Static US Map Generator",
+  "private": true,
+  "scripts": {
+    "build": "echo 'No build step required'"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
