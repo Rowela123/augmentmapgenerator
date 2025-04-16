@@ -14,6 +14,13 @@ const nextConfig = {
         },
       },
     });
+
+    // Add specific alias for us-states.json
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '../data/us-states.json': require.resolve('./src/data/us-states.json'),
+    };
+
     return config;
   },
 };
