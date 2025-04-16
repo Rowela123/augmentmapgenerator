@@ -6,7 +6,9 @@ import * as topojson from 'topojson-client';
 import { StateData } from '@/lib/types';
 import { getStateInfoFromId } from '@/lib/stateUtils';
 
-// Explicitly avoid importing us-states.json
+// Import a dummy file to satisfy the build process
+// This file is not actually used, we load the data from CDN
+import './us-states.json';
 
 interface USMapProps {
   stateData: StateData[];
