@@ -4,9 +4,6 @@
   "description": "Interactive US Map Generator with embedding capabilities",
   "private": true,
   "scripts": {
-    "build": "echo 'No build step required for static site'"
-  },
-  "engines": {
-    "node": ">=14.0.0"
+    "build": "echo 'Static site, no build required'"
   }
 }
