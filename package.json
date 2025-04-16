@@ -1,10 +1,10 @@
 {
-  "name": "us-map-generator",
+  "name": "us-map-generator-static",
   "version": "1.0.0",
-  "description": "Interactive US Map Generator with embedding capabilities",
+  "description": "Static US Map Generator",
   "private": true,
   "scripts": {
-    "build": "echo 'No build step required for static site'"
+    "build": "echo 'No build step required'"
   },
   "engines": {
     "node": ">=14.0.0"
