@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { USMap } from '@/components/USMap';
+import { USMap } from '@/components/USMapNew';
 import { MapData } from '@/lib/types';
 
 export default function EmbedPage({ params }: { params: { id: string } }) {
@@ -13,11 +13,11 @@ export default function EmbedPage({ params }: { params: { id: string } }) {
     async function fetchMapData() {
       try {
         const response = await fetch(`/api/maps/${params.id}`);
-        
+
         if (!response.ok) {
           throw new Error(`Failed to fetch map data: ${response.status} ${response.statusText}`);
         }
-        
+
         const data = await response.json();
         setMapData(data);
         setLoading(false);
@@ -45,8 +45,8 @@ export default function EmbedPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="map-container">
-      <USMap 
-        stateData={mapData.stateData} 
+      <USMap
+        stateData={mapData.stateData}
         colorScheme={mapData.colorScheme}
         title={mapData.title}
         legendTitle={mapData.legendTitle}
