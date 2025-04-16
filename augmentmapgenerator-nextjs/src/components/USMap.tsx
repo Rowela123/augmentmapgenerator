@@ -6,10 +6,6 @@ import * as topojson from 'topojson-client';
 import { StateData } from '@/lib/types';
 import { getStateInfoFromId } from '@/lib/stateUtils';
 
-// Import the exact file path that's being requested
-// This file is not actually used, we load the data from CDN
-import '../data/us-states.json';
-
 interface USMapProps {
   stateData: StateData[];
   colorScheme: string;
