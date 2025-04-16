@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Page</title>
+</head>
+<body style="font-family: Arial, sans-serif; text-align: center; margin-top: 50px;">
+    <h1 style="color: blue;">Test Page</h1>
+    <p>If you can see this text, the deployment is working!</p>
+    <p>Current time: <span id="time"></span></p>
+    
+    <script>
+        // Display the current time
+        document.getElementById('time').textContent = new Date().toLocaleTimeString();
+    </script>
+</body>
+</html>
