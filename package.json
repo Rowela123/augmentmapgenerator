@@ -1,9 +1,0 @@
-{
-  "name": "us-map-generator",
-  "version": "1.0.0",
-  "description": "Interactive US Map Generator with embedding capabilities",
-  "private": true,
-  "scripts": {
-    "build": "echo 'Static site, no build required'"
-  }
-}
