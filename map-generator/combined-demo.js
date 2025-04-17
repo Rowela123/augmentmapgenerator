@@ -586,7 +586,7 @@ function setupEventListeners() {
 
     // Save map
     document.getElementById('save-map').addEventListener('click', () => {
-        saveMapToFile();
+        saveMapToServer();
     });
 
     // Load map
@@ -880,10 +880,69 @@ function isNamedColor(color) {
     return tempElement.style.color !== '';
 }
 
+// Save map to server
+function saveMapToServer() {
+    if (stateData.length === 0) {
+        showSaveLoadMessage('Please upload data first.', 'error');
+        return;
+    }
+
+    // Create map data object
+    const mapData = {
+        stateData,
+        colorScheme,
+        title: mapTitle,
+        legendTitle,
+        legendMinLabel,
+        legendMaxLabel,
+        showLabels,
+        customColors,
+        savedDate: new Date().toISOString()
+    };
+
+    // Show loading message
+    showSaveLoadMessage('Saving map to server...', 'info');
+
+    // Send the map data to the server
+    fetch('/api/save-map', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(mapData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to save map');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Update the embed code with the new map ID
+        if (data.mapId) {
+            mapId = data.mapId;
+            updateEmbedCode(data.embedUrl, data.embedCode);
+            showSaveLoadMessage('Map saved successfully! Embed code updated.', 'success');
+        } else {
+            throw new Error('No map ID returned from server');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving map:', error);
+        showSaveLoadMessage(`Error saving map: ${error.message}`, 'error');
+    });
+}
+
 // Update embed code
-function updateEmbedCode() {
+function updateEmbedCode(embedUrl, embedCode) {
     if (!mapId || stateData.length === 0) {
         document.getElementById('embed-code').value = 'Upload data first to generate an embed code.';
+        return;
+    }
+
+    // If we have an embed code from the server, use it
+    if (embedCode) {
+        document.getElementById('embed-code').value = embedCode;
         return;
     }
 
@@ -1081,9 +1140,20 @@ function loadMapFromFile(event) {
 // Show save/load message
 function showSaveLoadMessage(message, type) {
     const messageElement = document.getElementById('save-load-message');
-    messageElement.innerHTML = `<div class="${type === 'error' ? 'error-message' : 'success-message'}">${message}</div>`;
 
-    setTimeout(() => {
-        messageElement.innerHTML = '';
-    }, 5000);
+    let className = 'success-message';
+    if (type === 'error') {
+        className = 'error-message';
+    } else if (type === 'info') {
+        className = 'info-message';
+    }
+
+    messageElement.innerHTML = `<div class="${className}">${message}</div>`;
+
+    // Don't auto-clear info messages during loading operations
+    if (type !== 'info') {
+        setTimeout(() => {
+            messageElement.innerHTML = '';
+        }, 5000);
+    }
 }
