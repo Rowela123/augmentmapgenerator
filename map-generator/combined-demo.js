@@ -946,42 +946,13 @@ function updateEmbedCode(embedUrl, embedCode) {
         return;
     }
 
-    // Create a minimal version of the map data
-    const minimalMapData = {
-        stateData,
-        colorScheme,
-        title: mapTitle,
-        legendTitle,
-        legendMinLabel,
-        legendMaxLabel,
-        showLabels,
-        customColors
-    };
+    // Create the embed code with the map ID
+    const baseUrl = window.location.origin;
+    const embedUrl = `${baseUrl}/embed.html?id=${mapId}`;
 
-    // Save the map data to a file that can be downloaded
-    const jsonString = JSON.stringify(minimalMapData);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const mapDataUrl = URL.createObjectURL(blob);
-
-    // Create a download link for the map data
-    const downloadLink = document.createElement('a');
-    downloadLink.href = mapDataUrl;
-    downloadLink.download = `map_data_${mapId}.json`;
-    downloadLink.style.display = 'none';
-    document.body.appendChild(downloadLink);
-
-    // Create a unique filename for the map data
-    const mapDataFilename = `map_data_${mapId}.json`;
-
-    // Create the embed code with instructions
     const code = `<!-- US Map Generator Embed Code -->
-<!-- Step 1: Download the map data file by clicking the "Download Map Data" button in the generator -->
-<!-- Step 2: Upload the map data file to your Shopify Files section -->
-<!-- Step 3: Replace YOUR_SHOPIFY_DOMAIN with your actual Shopify domain -->
-<!-- Step 4: Replace PATH_TO_UPLOADED_FILE with the path to the uploaded JSON file -->
-
 <iframe
-  src="https://cdn.jsdelivr.net/gh/biscuitcoder/us-map-generator@latest/embed.html?data_url=https://YOUR_SHOPIFY_DOMAIN/PATH_TO_UPLOADED_FILE"
+  src="${embedUrl}"
   width="100%"
   height="500"
   style="border: none; max-width: 100%;"
@@ -991,20 +962,10 @@ function updateEmbedCode(embedUrl, embedCode) {
 
     document.getElementById('embed-code').value = code;
 
-    // Create a download button for the map data
-    const downloadButton = document.getElementById('download-map-data') || document.createElement('button');
-    downloadButton.id = 'download-map-data';
-    downloadButton.className = 'action-button';
-    downloadButton.textContent = 'Download Map Data';
-    downloadButton.onclick = function() {
-        downloadLink.click();
-        showSaveLoadMessage('Map data downloaded. Upload this file to your Shopify Files section.', 'success');
-    };
-
-    // Add the download button after the embed code textarea if it doesn't exist
-    const embedCodeContainer = document.getElementById('embed-code').parentNode;
-    if (!document.getElementById('download-map-data')) {
-        embedCodeContainer.appendChild(downloadButton);
+    // Remove any existing download button
+    const existingButton = document.getElementById('download-map-data');
+    if (existingButton) {
+        existingButton.parentNode.removeChild(existingButton);
     }
 }
 
